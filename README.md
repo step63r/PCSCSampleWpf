@@ -1,5 +1,7 @@
 # PCSC Sample WPF
 
+![demo](./PCSCSampleWpf.png)
+
 ## Description
 
 Sample WPF application for trying PCSC with MVVM.
