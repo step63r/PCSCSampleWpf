@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Logging;
 using PCSC;
 using PCSC.Iso7816;
 
@@ -8,7 +9,7 @@ namespace MinatoProject.PCSCSampleWpf.ViewModels
     /// <summary>
     /// MainWindow.xamlのViewModelクラス
     /// </summary>
-    internal partial class MainWindowViewModel : ObservableObject
+    public partial class MainWindowViewModel : ObservableObject
     {
         #region プロパティ
         /// <summary>
@@ -50,16 +51,23 @@ namespace MinatoProject.PCSCSampleWpf.ViewModels
 
         #region メンバ変数
         /// <summary>
+        /// ロガー
+        /// </summary>
+        private readonly ILogger<MainWindowViewModel> _logger;
+
+        /// <summary>
         /// IContextFactory
         /// </summary>
         private readonly IContextFactory _contextFactory = ContextFactory.Instance;
         #endregion
-        
+
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        public MainWindowViewModel()
+        public MainWindowViewModel(ILogger<MainWindowViewModel> logger)
         {
+            _logger = logger;
+
             using (var context = _contextFactory.Establish(SCardScope.System))
             {
                 readers = [.. context.GetReaders()];
@@ -78,6 +86,8 @@ namespace MinatoProject.PCSCSampleWpf.ViewModels
         [RelayCommand]
         private void ReadCard()
         {
+            _logger.LogInformation("start");
+
             ReadButtonEnabled = false;
             ReadButtonText = "Reading...";
 
@@ -132,6 +142,8 @@ namespace MinatoProject.PCSCSampleWpf.ViewModels
                 ReadButtonEnabled = true;
                 ReadButtonText = "Read";
             }
+
+            _logger.LogInformation("end");
         }
         #endregion
     }
