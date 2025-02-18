@@ -1,15 +1,15 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
-using PCSC;
-using PCSC.Iso7816;
+using System.Collections.ObjectModel;
+using Wpf.Ui;
+using Wpf.Ui.Controls;
 
 namespace MinatoProject.PCSCSampleWpf.ViewModels
 {
     /// <summary>
     /// MainWindow.xamlのViewModelクラス
     /// </summary>
-    public partial class MainWindowViewModel : ObservableObject
+    public partial class MainWindowViewModel : ViewModel
     {
         #region プロパティ
         /// <summary>
@@ -19,129 +19,64 @@ namespace MinatoProject.PCSCSampleWpf.ViewModels
         private string applicationTitle = "PCSC Sample WPF";
 
         /// <summary>
-        /// デバイス一覧
+        /// ナビゲーション領域に表示する要素
         /// </summary>
         [ObservableProperty]
-        private List<string> readers = [];
+        private ObservableCollection<object> _navigationItems = [];
 
         /// <summary>
-        /// 選択されたデバイス
+        /// トレイ
         /// </summary>
         [ObservableProperty]
-        private string selectedReader = string.Empty;
-
-        /// <summary>
-        /// Readボタンの文言
-        /// </summary>
-        [ObservableProperty]
-        private string readButtonText = "Read";
-
-        /// <summary>
-        /// Readボタンの押下可否
-        /// </summary>
-        [ObservableProperty]
-        private bool readButtonEnabled = true;
-
-        /// <summary>
-        /// 処理結果の文字列
-        /// </summary>
-        [ObservableProperty]
-        private string resultText = string.Empty;
+        private ObservableCollection<MenuItem> _trayMenuItems = [];
         #endregion
 
         #region メンバ変数
         /// <summary>
+        /// 初期化済みフラグ
+        /// </summary>
+        private bool _isInitialized = false;
+
+        /// <summary>
         /// ロガー
         /// </summary>
         private readonly ILogger<MainWindowViewModel> _logger;
-
-        /// <summary>
-        /// IContextFactory
-        /// </summary>
-        private readonly IContextFactory _contextFactory = ContextFactory.Instance;
         #endregion
 
+        #region コンストラクタ
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        public MainWindowViewModel(ILogger<MainWindowViewModel> logger)
+        public MainWindowViewModel(ILogger<MainWindowViewModel> logger, INavigationService navigationService)
         {
             _logger = logger;
 
-            using (var context = _contextFactory.Establish(SCardScope.System))
+            if (!_isInitialized)
             {
-                readers = [.. context.GetReaders()];
-
-                if (readers.Count > 0)
-                {
-                    selectedReader = readers.First();
-                }
+                InitializeViewModel();
             }
         }
+        #endregion
 
-        #region コマンド
+        #region メソッド
         /// <summary>
-        /// カード情報を読み取る
+        /// ViewModelの初期化処理
         /// </summary>
-        [RelayCommand]
-        private void ReadCard()
+        private void InitializeViewModel()
         {
             _logger.LogInformation("start");
 
-            ReadButtonEnabled = false;
-            ReadButtonText = "Reading...";
-
-            try
-            {
-                using (var context = _contextFactory.Establish(SCardScope.System))
+            NavigationItems =
+            [
+                new NavigationViewItem()
                 {
-                    using (var reader = context.ConnectReader(SelectedReader, SCardShareMode.Shared, SCardProtocol.Any))
-                    {
-                        var apdu = new CommandApdu(IsoCase.Case2Short, reader.Protocol)
-                        {
-                            CLA = 0xFF,
-                            Instruction = InstructionCode.GetData,
-                            P1 = 0x00,
-                            P2 = 0x00,
-                            Le = 0      // We don't know the ID tag size
-                        };
+                    Content = "Reader",
+                    Icon = new SymbolIcon { Symbol = SymbolRegular.Home24 },
+                    TargetPageType = typeof(Views.Pages.ReaderPage),
+                },
+            ];
 
-                        using (reader.Transaction(SCardReaderDisposition.Leave))
-                        {
-                            var sendPci = SCardPCI.GetPci(reader.Protocol);
-                            var receivePci = new SCardPCI();    // IO returned protocol control information.
-
-                            var receiveBuffer = new byte[256];
-                            var command = apdu.ToArray();
-
-                            var bytesReceived = reader.Transmit(
-                                sendPci,                // Protocol Control Information (T0, T1 or Raw)
-                                command,                // command APDU
-                                command.Length, 
-                                receivePci,             // returning Protocol Control Information
-                                receiveBuffer,
-                                receiveBuffer.Length);  // data buffer
-
-                            var responseApdu =
-                                new ResponseApdu(receiveBuffer, bytesReceived, IsoCase.Case2Short, reader.Protocol);
-
-                            ResultText = $"SW1: {responseApdu.SW1:X2}" + Environment.NewLine +
-                                $"SW2: {responseApdu.SW2:X2}" + Environment.NewLine +
-                                $"Uid: {(responseApdu.HasData ? BitConverter.ToString(responseApdu.GetData()) : "No uid received")}";
-                        }
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                // TODO: logging
-                throw;
-            }
-            finally
-            {
-                ReadButtonEnabled = true;
-                ReadButtonText = "Read";
-            }
+            _isInitialized = true;
 
             _logger.LogInformation("end");
         }

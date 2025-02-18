@@ -8,7 +8,6 @@
 		<UseWPF>true</UseWPF>
 		<RootNamespace>MinatoProject.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
 		<PackageId>MinatoProject.$(AssemblyName)</PackageId>
-		<EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'" />
@@ -33,6 +32,9 @@
 		<PackageReference Include="NLog.Extensions.Logging" Version="5.4.0" />
 		<PackageReference Include="PCSC" Version="7.0.0" />
 		<PackageReference Include="PCSC.Iso7816" Version="7.0.0" />
+		<PackageReference Include="WPF-UI" Version="4.0.0" />
+		<PackageReference Include="WPF-UI.DependencyInjection" Version="4.0.0" />
+		<PackageReference Include="WPF-UI.Tray" Version="4.0.0" />
 	</ItemGroup>
 
 </Project>

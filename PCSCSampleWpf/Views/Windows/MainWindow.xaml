@@ -1,44 +1,37 @@
-﻿<Window x:Class="MinatoProject.PCSCSampleWpf.Views.Windows.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:MinatoProject.PCSCSampleWpf.Views.Windows"
-        xmlns:vm="clr-namespace:MinatoProject.PCSCSampleWpf.ViewModels"
-        mc:Ignorable="d"
-        Title="{Binding ApplicationTitle}" Height="450" Width="800"
-        d:DataContext="{d:DesignInstance Type={x:Type vm:MainWindowViewModel}, IsDesignTimeCreatable=False}">
-    <Grid Margin="4">
+﻿<ui:FluentWindow
+    x:Class="MinatoProject.PCSCSampleWpf.Views.Windows.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:local="clr-namespace:MinatoProject.PCSCSampleWpf.Views.Windows"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:MinatoProject.PCSCSampleWpf.ViewModels"
+    mc:Ignorable="d"
+    Title="{Binding ViewModel.ApplicationTitle, Mode=OneWay}" Height="450" Width="800"
+    d:DataContext="{d:DesignInstance local:MainWindow, IsDesignTimeCreatable=False}"
+    ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
+    ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    ExtendsContentIntoTitleBar="True"
+    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    WindowBackdropType="Mica"
+    WindowCornerPreference="Round"
+    WindowStartupLocation="CenterScreen">
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="auto" />
             <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!--デバイス選択領域-->
-        <Grid Grid.Row="0" Margin="4">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Grid Grid.Column="0" Margin="0 0 4 0" VerticalAlignment="Center">
-                    <TextBlock>Device:</TextBlock>
-                </Grid>
-                <Grid Grid.Column="1" Margin="4 0 0 0" VerticalAlignment="Center">
-                    <ComboBox ItemsSource="{Binding Readers, Mode=OneWay}" SelectedItem="{Binding SelectedReader}" />
-                </Grid>
-            </Grid>
+        <Grid Grid.Row="1">
+            <ui:NavigationView
+                x:Name="RootNavigation" 
+                MenuItemsSource="{Binding ViewModel.NavigationItems, Mode=OneWay}">
+            </ui:NavigationView>
         </Grid>
 
-        <!--読り取りボタン領域-->
-        <Grid Grid.Row="1" Margin="4">
-            <Button Command="{Binding ReadCardCommand}" Content="{Binding ReadButtonText}" IsEnabled="{Binding ReadButtonEnabled}" Padding="12" />
-        </Grid>
-
-        <!--表示領域-->
-        <Grid Grid.Row="2" Margin="4">
-            <TextBox Text="{Binding ResultText}" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Auto" />
-        </Grid>
+        <ui:TitleBar
+            Title="{Binding ViewModel.ApplicationTitle, Mode=OneWay}"
+            Grid.Row="0" />
     </Grid>
-</Window>
+</ui:FluentWindow>
