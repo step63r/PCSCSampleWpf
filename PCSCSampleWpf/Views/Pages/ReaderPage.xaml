@@ -38,12 +38,19 @@
 
         <!--読り取りボタン領域-->
         <Grid Grid.Row="1" Margin="4">
-            <Button Command="{Binding ReadCardCommand}" Content="{Binding ReadButtonText}" IsEnabled="{Binding ReadButtonEnabled}" Padding="12" />
+            <StackPanel Orientation="Horizontal">
+                <ui:Button Command="{Binding ReadCardCommand}" Content="Read" Icon="{ui:SymbolIcon Symbol=Play24}" Padding="24,12" Margin="0,0,8,0" />
+                <ui:Button Command="{Binding StopReadCardCommand}" Content="Stop" Icon="{ui:SymbolIcon Symbol=Stop24}" Padding="24,12" Margin="0,0,8,0" />
+            </StackPanel>
         </Grid>
 
         <!--表示領域-->
         <Grid Grid.Row="2" Margin="4">
-            <TextBox Text="{Binding ResultText}" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Auto" TextWrapping="WrapWithOverflow" />
+            <TextBox Text="{Binding ResultText}"
+                     VerticalScrollBarVisibility="Visible"
+                     HorizontalScrollBarVisibility="Auto"
+                     TextWrapping="Wrap"
+                     AcceptsReturn="True"/>
         </Grid>
     </Grid>
 </Page>

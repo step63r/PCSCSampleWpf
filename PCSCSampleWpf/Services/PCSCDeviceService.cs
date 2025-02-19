@@ -91,8 +91,8 @@ namespace MinatoProject.PCSCSampleWpf.Services
 
             if (_monitor.Monitoring)
             {
-                DetachFromAllEvents(_monitor);
                 _monitor.Cancel();
+                DetachFromAllEvents(_monitor);
             }
             else
             {
