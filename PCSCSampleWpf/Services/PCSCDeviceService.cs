@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
+using MinatoProject.PCSCSampleWpf.Common;
 using MinatoProject.PCSCSampleWpf.Services.Interfaces;
 using PCSC;
+using PCSC.Iso7816;
 using PCSC.Monitoring;
 
 namespace MinatoProject.PCSCSampleWpf.Services
@@ -109,7 +111,78 @@ namespace MinatoProject.PCSCSampleWpf.Services
             {
                 CancelMonitor();
             }
+        }
+
+        /// <inheritdoc />
+        public ReaderStatus GetStatus(string readerName)
+        {
+            _logger.LogInformation("start");
+
+            using (var context = _contextFactory.Establish(SCardScope.System))
+            {
+                using (var reader = context.ConnectReader(readerName, SCardShareMode.Direct, SCardProtocol.Unset))
+                {
+                    _logger.LogInformation("end");
+                    return reader.GetStatus();
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public ResponseApdu GetData(string readerName, ApduInsGetData P1)
+        {
+            _logger.LogInformation("start");
+
+            using var context = _contextFactory.Establish(SCardScope.System);
+            using var reader = context.ConnectReader(readerName, SCardShareMode.Shared, SCardProtocol.Any);
+
+            var apdu = new CommandApdu(IsoCase.Case2Short, reader.Protocol)
+            {
+                CLA = 0xFF,
+                Instruction = InstructionCode.GetData,
+                P1 = (byte)P1,
+                P2 = 0x00,
+                Le = 0,
+            };
+
+            var responseApdu = SendCommandApdu(reader, apdu);
+
             _logger.LogInformation("end");
+            return responseApdu;
+        }
+
+        /// <summary>
+        /// APDUコマンド送信用の内部メソッド
+        /// </summary>
+        /// <param name="reader">カードリーダー</param>
+        /// <param name="apdu">APDUコマンドオブジェクト</param>
+        /// <returns>APDUレスポンスオブジェクト</returns>
+        private ResponseApdu SendCommandApdu(ICardReader reader, CommandApdu apdu)
+        {
+            _logger.LogInformation("start");
+
+            using (reader.Transaction(SCardReaderDisposition.Leave))
+            {
+                var sendPci = SCardPCI.GetPci(reader.Protocol);
+                var receivePci = new SCardPCI();    // IO returned protocol control information.
+
+                var receiveBuffer = new byte[256];
+                var command = apdu.ToArray();
+
+                var bytesReceived = reader.Transmit(
+                    sendPci,                // Protocol Control Information (T0, T1 or Raw)
+                    command,                // command APDU
+                    command.Length,
+                    receivePci,             // returning Protocol Control Information
+                    receiveBuffer,
+                    receiveBuffer.Length);  // data buffer
+
+                var responseApdu =
+                    new ResponseApdu(receiveBuffer, bytesReceived, IsoCase.Case2Short, reader.Protocol);
+
+                _logger.LogInformation("end");
+                return responseApdu;
+            }
         }
 
         /// <summary>

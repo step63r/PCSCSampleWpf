@@ -1,10 +1,11 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using MinatoProject.PCSCSampleWpf.Common;
 using MinatoProject.PCSCSampleWpf.Services.Interfaces;
 using PCSC.Monitoring;
-using System.Numerics;
-using System.Windows.Threading;
+using System.Globalization;
+using System.Text;
 
 namespace MinatoProject.PCSCSampleWpf.ViewModels
 {
@@ -58,6 +59,13 @@ namespace MinatoProject.PCSCSampleWpf.ViewModels
         private readonly IPCSCDeviceService _deviceService;
         #endregion
 
+        #region 定数値
+        /// <summary>
+        /// システムのANSIコードページ
+        /// </summary>
+        private static readonly int AnsiCodePage = CultureInfo.CurrentCulture.TextInfo.ANSICodePage;
+        #endregion
+
         #region コンストラクタ
         /// <summary>
         /// コンストラクタ
@@ -74,6 +82,9 @@ namespace MinatoProject.PCSCSampleWpf.ViewModels
             {
                 SelectedReader = Readers.First();
             }
+
+            // .NETでASCII、UTF-7、UTF-8、UTF-16、UTF-32以外のエンコードを使うために必要
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
             AttachEvents();
         }
@@ -98,55 +109,6 @@ namespace MinatoProject.PCSCSampleWpf.ViewModels
                 _logger.LogError(ex.StackTrace);
                 ResultText = $"{ex.Message}\n-----\n{ex.StackTrace}";
             }
-
-            //try
-            //{
-            //    using (var context = _contextFactory.Establish(SCardScope.System))
-            //    {
-            //        using (var reader = context.ConnectReader(SelectedReader, SCardShareMode.Shared, SCardProtocol.Any))
-            //        {
-            //            var apdu = new CommandApdu(IsoCase.Case2Short, reader.Protocol)
-            //            {
-            //                CLA = 0xFF,
-            //                Instruction = InstructionCode.GetData,
-            //                P1 = 0x00,
-            //                P2 = 0x00,
-            //                Le = 0      // We don't know the ID tag size
-            //            };
-
-            //            using (reader.Transaction(SCardReaderDisposition.Leave))
-            //            {
-            //                var sendPci = SCardPCI.GetPci(reader.Protocol);
-            //                var receivePci = new SCardPCI();    // IO returned protocol control information.
-
-            //                var receiveBuffer = new byte[256];
-            //                var command = apdu.ToArray();
-
-            //                var bytesReceived = reader.Transmit(
-            //                    sendPci,                // Protocol Control Information (T0, T1 or Raw)
-            //                    command,                // command APDU
-            //                    command.Length,
-            //                    receivePci,             // returning Protocol Control Information
-            //                    receiveBuffer,
-            //                    receiveBuffer.Length);  // data buffer
-
-            //                var responseApdu =
-            //                    new ResponseApdu(receiveBuffer, bytesReceived, IsoCase.Case2Short, reader.Protocol);
-
-            //                ResultText = $"SW1: {responseApdu.SW1:X2}" + Environment.NewLine +
-            //                    $"SW2: {responseApdu.SW2:X2}" + Environment.NewLine +
-            //                    $"Uid: {(responseApdu.HasData ? BitConverter.ToString(responseApdu.GetData()) : "No uid received")}";
-            //            }
-            //        }
-            //    }
-            //}
-            //catch (Exception ex)
-            //{
-            //    _logger.LogError(ex.Message);
-            //}
-            //finally
-            //{
-            //}
 
             _logger.LogInformation("end");
         }
@@ -182,6 +144,59 @@ namespace MinatoProject.PCSCSampleWpf.ViewModels
         private bool CanStopReadCard()
         {
             return IsReading;
+        }
+
+        /// <summary>
+        /// デバイスステータスを取得する
+        /// </summary>
+        [RelayCommand]
+        private void GetStatus()
+        {
+            _logger.LogInformation("start");
+
+            try
+            {
+                var status = _deviceService.GetStatus(SelectedReader);
+                ResultText = $"Protocol: {status.Protocol}" + Environment.NewLine +
+                    $"State: {status.State}" + Environment.NewLine +
+                    $"ATR: {BitConverter.ToString(status.GetAtr())}";
+            }
+            catch (Exception ex)
+            {
+                ResultText = $"[ERROR]\n{ex.Message}\n-----\n{ex.StackTrace}";
+                _logger.LogError(ex.Message);
+            }
+
+            _logger.LogInformation("end");
+        }
+
+        [RelayCommand]
+        private void GetCardInfo()
+        {
+            _logger.LogInformation("start");
+            ResultText = string.Empty;
+
+            try
+            {
+                // カードのUID
+                var response1 = _deviceService.GetData(SelectedReader, ApduInsGetData.GetUid);
+                ResultText += $"[SW1=0x{response1.SW1:X2}, SW2=0x{response1.SW2:X2}] UID: {(response1.HasData ? BitConverter.ToString(response1.GetData()) : "No uid received")}\n";
+
+                // カード名称
+                var response2 = _deviceService.GetData(SelectedReader, ApduInsGetData.GetCardName);
+                ResultText += $"[SW1=0x{response2.SW1:X2}, SW2=0x{response2.SW2:X2}] Card Name: {(response2.HasData ? Encoding.GetEncoding(AnsiCodePage).GetString(response2.GetData()) : "No card name received")}\n";
+
+                // カード種別名称
+                var response3 = _deviceService.GetData(SelectedReader, ApduInsGetData.GetCardTypeName);
+                ResultText += $"[SW1=0x{response3.SW1:X2}, SW2=0x{response3.SW2:X2}] Card Type: {(response3.HasData ? Encoding.GetEncoding(AnsiCodePage).GetString(response3.GetData()) : "No card type name received")} \n";
+            }
+            catch (Exception ex)
+            {
+                ResultText = $"[ERROR]\n{ex.Message}\n-----\n{ex.StackTrace}";
+                _logger.LogError(ex.Message);
+            }
+
+            _logger.LogInformation("end");
         }
 
         /// <summary>

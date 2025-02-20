@@ -1,9 +1,7 @@
-﻿using PCSC.Monitoring;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using MinatoProject.PCSCSampleWpf.Common;
+using PCSC;
+using PCSC.Iso7816;
+using PCSC.Monitoring;
 
 namespace MinatoProject.PCSCSampleWpf.Services.Interfaces
 {
@@ -52,6 +50,19 @@ namespace MinatoProject.PCSCSampleWpf.Services.Interfaces
         /// デバイスのモニタリングを終了する
         /// </summary>
         void CancelMonitor();
+        /// <summary>
+        /// デバイスのステータスを取得する
+        /// </summary>
+        /// <param name="readerName">デバイス名</param>
+        /// <returns>デバイスステータス</returns>
+        ReaderStatus GetStatus(string readerName);
+        /// <summary>
+        /// カードのデータを取得する
+        /// </summary>
+        /// <param name="readerName">デバイス名</param>
+        /// <param name="P1">パラメータ1</param>
+        /// <returns>APDUレスポンスオブジェクト</returns>
+        ResponseApdu GetData(string readerName, ApduInsGetData P1);
         #endregion
     }
 }
