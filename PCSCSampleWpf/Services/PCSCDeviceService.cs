@@ -151,6 +151,52 @@ namespace MinatoProject.PCSCSampleWpf.Services
             return responseApdu;
         }
 
+        /// <inheritdoc />
+        public ResponseApdu ReadBinary(string readerName, byte msb, byte lsb, int size)
+        {
+            _logger.LogInformation("start");
+
+            using var context = _contextFactory.Establish(SCardScope.System);
+            using var reader = context.ConnectReader(readerName, SCardShareMode.Shared, SCardProtocol.Any);
+
+            var apdu = new CommandApdu(IsoCase.Case2Short, reader.Protocol)
+            {
+                CLA = 0xFF,
+                Instruction = InstructionCode.ReadBinary,
+                P1 = msb,
+                P2 = lsb,
+                Le = size,
+            };
+
+            var responseApdu = SendCommandApdu(reader, apdu);
+
+            _logger.LogInformation("end");
+            return responseApdu;
+        }
+
+        /// <inheritdoc />
+        public ResponseApdu UpdateBinary(string readerName, byte msb, byte lsb, byte[] data)
+        {
+            _logger.LogInformation("start");
+
+            using var context = _contextFactory.Establish(SCardScope.System);
+            using var reader = context.ConnectReader(readerName, SCardShareMode.Shared, SCardProtocol.Any);
+
+            var apdu = new CommandApdu(IsoCase.Case3Short, reader.Protocol)
+            {
+                CLA = 0xFF,
+                Instruction = InstructionCode.UpdateBinary,
+                P1 = msb,
+                P2 = lsb,
+                Data = data,
+            };
+
+            var responseApdu = SendCommandApdu(reader, apdu);
+
+            _logger.LogInformation("end");
+            return responseApdu;
+        }
+
         /// <summary>
         /// APDUコマンド送信用の内部メソッド
         /// </summary>
