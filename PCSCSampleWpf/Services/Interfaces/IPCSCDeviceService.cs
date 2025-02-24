@@ -73,6 +73,15 @@ namespace MinatoProject.PCSCSampleWpf.Services.Interfaces
         /// <returns>APDUレスポンスオブジェクト</returns>
         ResponseApdu ReadBinary(string readerName, byte msb, byte lsb, int size);
         /// <summary>
+        /// バイナリデータをすべて読み取る
+        /// </summary>
+        /// <param name="readerName">デバイス名</param>
+        /// <param name="offset">何ブロック（ページ）ずつ読み取るか</param>
+        /// <param name="size">サイズ</param>
+        /// <param name="allBytes">全体バイト数</param>
+        /// <returns>レスポンスオブジェクト配列</returns>
+        List<ResponseApdu> ReadAllBinaries(string readerName, int offset, int size, int allBytes);
+        /// <summary>
         /// バイナリデータを書き込む
         /// </summary>
         /// <param name="readerName">デバイス名</param>

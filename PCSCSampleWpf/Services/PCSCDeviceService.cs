@@ -175,6 +175,53 @@ namespace MinatoProject.PCSCSampleWpf.Services
         }
 
         /// <inheritdoc />
+        public List<ResponseApdu> ReadAllBinaries(string readerName, int offset, int size, int allBytes)
+        {
+            _logger.LogInformation("start");
+
+            var responses = new List<ResponseApdu>();
+
+            using var context = _contextFactory.Establish(SCardScope.System);
+            using var reader = context.ConnectReader(readerName, SCardShareMode.Shared, SCardProtocol.Any);
+
+            int i = 0;
+            int currentDataSize = 0;
+
+            while (true)
+            {
+                var apdu = new CommandApdu(IsoCase.Case2Short, reader.Protocol)
+                {
+                    CLA = 0xFF,
+                    Instruction = InstructionCode.ReadBinary,
+                    P1 = 0x00,
+                    P2 = (byte)(i * offset),
+                    Le = size,
+                };
+
+                var responseApdu = SendCommandApdu(reader, apdu);
+
+                if (responseApdu.HasData)
+                {
+                    responses.Add(responseApdu);
+
+                    i++;
+                    currentDataSize += responseApdu.DataSize;
+
+                    if (currentDataSize <= allBytes)
+                    {
+                        continue;
+                    }
+                }
+
+                // ここに到達した場合はもう読み取るデータがない
+                break;
+            }
+
+            _logger.LogInformation("end");
+            return responses;
+        }
+
+        /// <inheritdoc />
         public ResponseApdu UpdateBinary(string readerName, byte msb, byte lsb, byte[] data)
         {
             _logger.LogInformation("start");

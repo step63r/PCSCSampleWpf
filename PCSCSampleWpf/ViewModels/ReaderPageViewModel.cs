@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using MinatoProject.PCSCSampleWpf.Common;
 using MinatoProject.PCSCSampleWpf.Services.Interfaces;
+using PCSC;
 using PCSC.Monitoring;
 using System.Globalization;
 using System.Text;
@@ -40,12 +41,34 @@ namespace MinatoProject.PCSCSampleWpf.ViewModels
         private string resultText = string.Empty;
 
         /// <summary>
-        /// 読取中フラグ
+        /// デバイスのステータス
         /// </summary>
         [ObservableProperty]
-        [NotifyCanExecuteChangedFor(nameof(ReadCardCommand))]
-        [NotifyCanExecuteChangedFor(nameof(StopReadCardCommand))]
-        private bool isReading = false;
+        private string deviceStatus = string.Empty;
+
+        /// <summary>
+        /// デバイスのATR
+        /// </summary>
+        [ObservableProperty]
+        private string deviceATR = string.Empty;
+
+        /// <summary>
+        /// カードのUID
+        /// </summary>
+        [ObservableProperty]
+        private string cardUid = string.Empty;
+
+        /// <summary>
+        /// カード名称
+        /// </summary>
+        [ObservableProperty]
+        private string cardName = string.Empty;
+
+        /// <summary>
+        /// カード種別
+        /// </summary>
+        [ObservableProperty]
+        private string cardType = string.Empty;
         #endregion
 
         #region メンバ変数
@@ -85,123 +108,37 @@ namespace MinatoProject.PCSCSampleWpf.ViewModels
 
             // .NETでASCII、UTF-7、UTF-8、UTF-16、UTF-32以外のエンコードを使うために必要
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-
-            AttachEvents();
         }
         #endregion
 
-        #region コマンド
-        [RelayCommand(CanExecute = nameof(CanReadCard))]
-        private void ReadCard()
+        #region 抽象メソッドの実装
+        /// <inheritdoc />
+        public override void OnNavigatedTo()
         {
             _logger.LogInformation("start");
 
-            try
+            if (!string.IsNullOrEmpty(SelectedReader))
             {
+                AttachEvents();
                 _deviceService.StartMonitor(SelectedReader);
-
-                ResultText = string.Empty;
-                IsReading = true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message);
-                _logger.LogError(ex.StackTrace);
-                ResultText = $"{ex.Message}\n-----\n{ex.StackTrace}";
             }
 
             _logger.LogInformation("end");
         }
 
-        /// <summary>
-        /// ReadCardコマンドの実行可能状態を取得する
-        /// </summary>
-        /// <returns>実行可否</returns>
-        private bool CanReadCard()
-        {
-            return !IsReading;
-        }
-
-        /// <summary>
-        /// 読取りを終了する
-        /// </summary>
-        [RelayCommand(CanExecute = nameof(CanStopReadCard))]
-        private void StopReadCard()
+        /// <inheritdoc />
+        public override void OnNavigatedFrom()
         {
             _logger.LogInformation("start");
 
             _deviceService.CancelMonitor();
             DetachEvents();
-            IsReading = false;
 
             _logger.LogInformation("end");
         }
+        #endregion
 
-        /// <summary>
-        /// StopReadCardの実行可能状態を取得する
-        /// </summary>
-        /// <returns>実行可否</returns>
-        private bool CanStopReadCard()
-        {
-            return IsReading;
-        }
-
-        /// <summary>
-        /// デバイスステータスを取得する
-        /// </summary>
-        [RelayCommand]
-        private void GetStatus()
-        {
-            _logger.LogInformation("start");
-
-            try
-            {
-                var status = _deviceService.GetStatus(SelectedReader);
-                ResultText = $"Protocol: {status.Protocol}" + Environment.NewLine +
-                    $"State: {status.State}" + Environment.NewLine +
-                    $"ATR: {BitConverter.ToString(status.GetAtr())}";
-            }
-            catch (Exception ex)
-            {
-                ResultText = $"[ERROR]\n{ex.Message}\n-----\n{ex.StackTrace}";
-                _logger.LogError(ex.Message);
-            }
-
-            _logger.LogInformation("end");
-        }
-
-        /// <summary>
-        /// カード情報を取得する
-        /// </summary>
-        [RelayCommand]
-        private void GetCardInfo()
-        {
-            _logger.LogInformation("start");
-            ResultText = string.Empty;
-
-            try
-            {
-                // カードのUID
-                var response1 = _deviceService.GetData(SelectedReader, ApduInsGetData.GetUid);
-                ResultText += $"[SW1=0x{response1.SW1:X2}, SW2=0x{response1.SW2:X2}] UID: {(response1.HasData ? BitConverter.ToString(response1.GetData()) : "No uid received")}\n";
-
-                // カード名称
-                var response2 = _deviceService.GetData(SelectedReader, ApduInsGetData.GetCardName);
-                ResultText += $"[SW1=0x{response2.SW1:X2}, SW2=0x{response2.SW2:X2}] Card Name: {(response2.HasData ? Encoding.GetEncoding(AnsiCodePage).GetString(response2.GetData()) : "No card name received")}\n";
-
-                // カード種別名称
-                var response3 = _deviceService.GetData(SelectedReader, ApduInsGetData.GetCardTypeName);
-                ResultText += $"[SW1=0x{response3.SW1:X2}, SW2=0x{response3.SW2:X2}] Card Type: {(response3.HasData ? Encoding.GetEncoding(AnsiCodePage).GetString(response3.GetData()) : "No card type name received")} \n";
-            }
-            catch (Exception ex)
-            {
-                ResultText = $"[ERROR]\n{ex.Message}\n-----\n{ex.StackTrace}";
-                _logger.LogError(ex.Message);
-            }
-
-            _logger.LogInformation("end");
-        }
-
+        #region コマンド
         /// <summary>
         /// バイナリデータを読み込む
         /// </summary>
@@ -218,6 +155,34 @@ namespace MinatoProject.PCSCSampleWpf.ViewModels
                 {
                     var response = _deviceService.ReadBinary(SelectedReader, 0x00, (byte)(i * 4), 0x10);
                     ResultText += $"[SW1=0x{response.SW1:X2}, SW2=0x{response.SW2:X2}] [0x{i * 4:X2}] {(response.HasData ? BitConverter.ToString(response.GetData()) : "NO DATA")}\n";
+                }
+            }
+            catch (Exception ex)
+            {
+                ResultText = $"[ERROR]\n{ex.Message}\n-----\n{ex.StackTrace}";
+                _logger.LogError(ex.Message);
+            }
+
+            _logger.LogInformation("end");
+        }
+
+        /// <summary>
+        /// すべてのバイナリデータを読み込む
+        /// </summary>
+        [RelayCommand]
+        private void ReadAllBinaries()
+        {
+            _logger.LogInformation("start");
+            ResultText = string.Empty;
+
+            try
+            {
+                var responses = _deviceService.ReadAllBinaries(SelectedReader, 4, 0x10, 540);
+
+                int i = 0;
+                foreach (var response in responses)
+                {
+                    ResultText += $"[SW1=0x{response.SW1:X2}, SW2=0x{response.SW2:X2}] [0x{i++ * 4:X2}] {(response.HasData ? BitConverter.ToString(response.GetData()) : "NO DATA")}\n";
                 }
             }
             catch (Exception ex)
@@ -254,30 +219,74 @@ namespace MinatoProject.PCSCSampleWpf.ViewModels
         }
 
         /// <summary>
-        /// CardInitializedEventのイベントハンドラ
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="args"></param>
-        private void OnCardInitialized(object sender, CardStatusEventArgs args)
-        {
-            if ((args.State & PCSC.SCRState.Present) == PCSC.SCRState.Present)
-            {
-                _logger.LogInformation(BitConverter.ToString(args.Atr));
-                ResultText = $"ATR: {BitConverter.ToString(args.Atr)}";
-                System.Windows.Application.Current.Dispatcher.Invoke(StopReadCard);
-            }
-        }
-
-        /// <summary>
         /// CardInsertedEventのイベントハンドラ
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void OnCardInserted(object sender, CardStatusEventArgs args)
         {
-            _logger.LogInformation(BitConverter.ToString(args.Atr));
-            ResultText = $"ATR: {BitConverter.ToString(args.Atr)}";
-            System.Windows.Application.Current.Dispatcher.Invoke(StopReadCard);
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            {
+                var status = PCSCUtils.SeparatePCSCState(args.State);
+                DeviceStatus = string.Join(", ", [.. status.Select(x => x.ToString())]);
+
+                if (args.Atr != null && args.Atr.Length > 0)
+                {
+                    DeviceATR = BitConverter.ToString(args.Atr);
+                }
+            });
+
+            if ((args.State & SCRState.Present) == SCRState.Present)
+            {
+                UpdateCardInfo();
+            }
+        }
+
+        /// <summary>
+        /// CardRemovedEvent
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        private void OnCardRemoved(object sender, CardStatusEventArgs args)
+        {
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            {
+                var status = PCSCUtils.SeparatePCSCState(args.State);
+                DeviceStatus = string.Join(", ", [.. status.Select(x => x.ToString())]);
+
+                if (args.Atr != null && args.Atr.Length > 0)
+                {
+                    DeviceATR = BitConverter.ToString(args.Atr);
+                }
+
+                CardUid = string.Empty;
+                CardName = string.Empty;
+                CardType = string.Empty;
+            });
+        }
+
+        /// <summary>
+        /// CardInitializedEventのイベントハンドラ
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        private void OnCardInitialized(object sender, CardStatusEventArgs args)
+        {
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            {
+                var status = PCSCUtils.SeparatePCSCState(args.State);
+                DeviceStatus = string.Join(", ", [.. status.Select(x => x.ToString())]);
+
+                if (args.Atr != null && args.Atr.Length > 0)
+                {
+                    DeviceATR = BitConverter.ToString(args.Atr);
+                }
+            });
+
+            if ((args.State & SCRState.Present) == SCRState.Present)
+            {
+                UpdateCardInfo();
+            }
         }
 
         /// <summary>
@@ -287,11 +296,20 @@ namespace MinatoProject.PCSCSampleWpf.ViewModels
         /// <param name="args"></param>
         private void OnStatusChanged(object sender, StatusChangeEventArgs args)
         {
-            if ((args.NewState & PCSC.SCRState.Present) == PCSC.SCRState.Present)
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
-                _logger.LogInformation(BitConverter.ToString(args.Atr));
-                ResultText = $"ATR: {BitConverter.ToString(args.Atr)}";
-                System.Windows.Application.Current.Dispatcher.Invoke(StopReadCard);
+                var status = PCSCUtils.SeparatePCSCState(args.NewState);
+                DeviceStatus = string.Join(", ", [.. status.Select(x => x.ToString())]);
+
+                if (args.Atr != null && args.Atr.Length > 0)
+                {
+                    DeviceATR = BitConverter.ToString(args.Atr);
+                }
+            });
+
+            if ((args.NewState & SCRState.Present) == SCRState.Present)
+            {
+                UpdateCardInfo();
             }
         }
         #endregion
@@ -302,8 +320,9 @@ namespace MinatoProject.PCSCSampleWpf.ViewModels
         /// </summary>
         private void AttachEvents()
         {
-            _deviceService.OnCardInitialized += OnCardInitialized;
             _deviceService.OnCardInserted += OnCardInserted;
+            _deviceService.OnCardRemoved += OnCardRemoved;
+            _deviceService.OnCardInitialized += OnCardInitialized;
             _deviceService.OnStatusChanged += OnStatusChanged;
         }
 
@@ -312,9 +331,46 @@ namespace MinatoProject.PCSCSampleWpf.ViewModels
         /// </summary>
         private void DetachEvents()
         {
-            _deviceService.OnCardInitialized -= OnCardInitialized;
             _deviceService.OnCardInserted -= OnCardInserted;
+            _deviceService.OnCardRemoved -= OnCardRemoved;
+            _deviceService.OnCardInitialized -= OnCardInitialized;
             _deviceService.OnStatusChanged -= OnStatusChanged;
+        }
+
+        /// <summary>
+        /// カード情報を更新する
+        /// </summary>
+        private void UpdateCardInfo()
+        {
+            string cardUid = string.Empty;
+            string cardName = string.Empty;
+            string cardType = string.Empty;
+
+            try
+            {
+                // カードのUID
+                var response1 = _deviceService.GetData(SelectedReader, ApduInsGetData.GetUid);
+                cardUid = response1.HasData ? BitConverter.ToString(response1.GetData()) : "No uid received";
+
+                // カード名称
+                var response2 = _deviceService.GetData(SelectedReader, ApduInsGetData.GetCardName);
+                cardName = response2.HasData ? Encoding.GetEncoding(AnsiCodePage).GetString(response2.GetData()) : "No card name received";
+
+                // カード種別名称
+                var response3 = _deviceService.GetData(SelectedReader, ApduInsGetData.GetCardTypeName);
+                cardType = response3.HasData ? Encoding.GetEncoding(AnsiCodePage).GetString(response3.GetData()) : "No card type name received";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+            }
+
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            {
+                CardUid = cardUid;
+                CardName = cardName;
+                CardType = cardType;
+            });
         }
         #endregion
     }

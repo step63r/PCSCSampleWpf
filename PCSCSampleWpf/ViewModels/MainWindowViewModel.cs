@@ -71,7 +71,7 @@ namespace MinatoProject.PCSCSampleWpf.ViewModels
                 new NavigationViewItem()
                 {
                     Content = "Reader",
-                    Icon = new SymbolIcon { Symbol = SymbolRegular.Home24 },
+                    Icon = new SymbolIcon { Symbol = SymbolRegular.ScanText24 },
                     TargetPageType = typeof(Views.Pages.ReaderPage),
                 },
             ];

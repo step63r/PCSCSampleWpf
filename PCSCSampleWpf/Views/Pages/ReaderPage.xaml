@@ -17,6 +17,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
             <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -28,7 +29,7 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <Grid Grid.Column="0" Margin="0 0 4 0" VerticalAlignment="Center">
-                    <TextBlock>Device:</TextBlock>
+                    <ui:TextBlock>Device:</ui:TextBlock>
                 </Grid>
                 <Grid Grid.Column="1" Margin="4 0 0 0" VerticalAlignment="Center">
                     <ComboBox ItemsSource="{Binding Readers, Mode=OneWay}" SelectedItem="{Binding SelectedReader}" />
@@ -36,20 +37,41 @@
             </Grid>
         </Grid>
 
-        <!--読り取りボタン領域-->
+        <!--デバイス・カード情報領域-->
         <Grid Grid.Row="1" Margin="4">
-            <StackPanel Orientation="Horizontal">
-                <ui:Button Command="{Binding ReadCardCommand}" Content="Read" Icon="{ui:SymbolIcon Symbol=Play24}" Padding="24,12" Margin="0,0,8,0" />
-                <ui:Button Command="{Binding StopReadCardCommand}" Content="Stop" Icon="{ui:SymbolIcon Symbol=Stop24}" Padding="24,12" Margin="0,0,8,0" />
-                <ui:Button Command="{Binding GetStatusCommand}" Content="Status" Padding="24,12" Margin="0,0,8,0" />
-                <ui:Button Command="{Binding GetCardInfoCommand}" Content="Get Card Info" Padding="24,12" Margin="0,0,8,0" />
-                <ui:Button Command="{Binding ReadBinaryCommand}" Content="Read Binary" Padding="24,12" Margin="0,0,8,0" />
-                <ui:Button Command="{Binding UpdateBinaryCommand}" Content="Update Binary" Padding="24,12" Margin="0,0,8,0" />
-            </StackPanel>
+            <Grid Margin="8 0 0 0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <ui:TextBlock Grid.Row="0" Grid.Column="0" Padding="2">Status:</ui:TextBlock>
+                <ui:TextBlock Grid.Row="1" Grid.Column="0" Padding="2">ATR:</ui:TextBlock>
+                <ui:TextBlock Grid.Row="2" Grid.Column="0" Padding="2">UID:</ui:TextBlock>
+                <ui:TextBlock Grid.Row="3" Grid.Column="0" Padding="2">Card Name:</ui:TextBlock>
+                <ui:TextBlock Grid.Row="4" Grid.Column="0" Padding="2">Card Type:</ui:TextBlock>
+
+                <ui:TextBlock Grid.Row="0" Grid.Column="1" Padding="2" Text="{Binding DeviceStatus}" />
+                <ui:TextBlock Grid.Row="1" Grid.Column="1" Padding="2" Text="{Binding DeviceATR}" />
+                <ui:TextBlock Grid.Row="2" Grid.Column="1" Padding="2" Text="{Binding CardUid}" />
+                <ui:TextBlock Grid.Row="3" Grid.Column="1" Padding="2" Text="{Binding CardName}" />
+                <ui:TextBlock Grid.Row="4" Grid.Column="1" Padding="2" Text="{Binding CardType}" />
+            </Grid>
+        </Grid>
+
+        <!--読り取りボタン領域-->
+        <Grid Grid.Row="2" Margin="4">
+            <ui:Button Command="{Binding ReadAllBinariesCommand}" Content="Read Binary" Padding="24,12" Margin="0,0,8,0" />
         </Grid>
 
         <!--表示領域-->
-        <Grid Grid.Row="2" Margin="4">
+        <Grid Grid.Row="3" Margin="4">
             <TextBox Text="{Binding ResultText}"
                      VerticalScrollBarVisibility="Visible"
                      HorizontalScrollBarVisibility="Auto"
