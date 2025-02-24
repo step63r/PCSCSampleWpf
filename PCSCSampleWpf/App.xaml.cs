@@ -56,6 +56,8 @@ public partial class App : Application
             // Views and ViewModels
             _ = services.AddSingleton<ReaderPage>();
             _ = services.AddSingleton<ReaderPageViewModel>();
+            _ = services.AddSingleton<WriterPage>();
+            _ = services.AddSingleton<WriterPageViewModel>();
 
             // Services
             _ = services.AddSingleton<IPCSCDeviceService, PCSCDeviceService>();

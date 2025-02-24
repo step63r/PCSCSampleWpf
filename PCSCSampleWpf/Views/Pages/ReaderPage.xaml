@@ -12,7 +12,8 @@
       d:DataContext="{d:DesignInstance Type={x:Type vm:ReaderPageViewModel}, IsDesignTimeCreatable=False}"
       ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
       ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-      Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+      Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+      ScrollViewer.CanContentScroll="False">
     <Grid Margin="4">
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
@@ -67,16 +68,17 @@
 
         <!--読り取りボタン領域-->
         <Grid Grid.Row="2" Margin="4">
-            <ui:Button Command="{Binding ReadAllBinariesCommand}" Content="Read Binary" Padding="24,12" Margin="0,0,8,0" />
+            <ui:Button Command="{Binding ReadAllBinariesCommand}" Content="Read Binary" Padding="24,12" />
         </Grid>
 
         <!--表示領域-->
         <Grid Grid.Row="3" Margin="4">
-            <TextBox Text="{Binding ResultText}"
-                     VerticalScrollBarVisibility="Visible"
-                     HorizontalScrollBarVisibility="Auto"
-                     TextWrapping="Wrap"
-                     AcceptsReturn="True"/>
+            <ui:TextBox Text="{Binding ResultText}"
+                        VerticalScrollBarVisibility="Visible"
+                        HorizontalScrollBarVisibility="Auto"
+                        TextWrapping="Wrap"
+                        AcceptsReturn="True"
+                        ClearButtonEnabled="False" />
         </Grid>
     </Grid>
 </Page>

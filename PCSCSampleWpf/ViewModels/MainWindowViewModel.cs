@@ -74,6 +74,12 @@ namespace MinatoProject.PCSCSampleWpf.ViewModels
                     Icon = new SymbolIcon { Symbol = SymbolRegular.ScanText24 },
                     TargetPageType = typeof(Views.Pages.ReaderPage),
                 },
+                new NavigationViewItem()
+                {
+                    Content = "Writer",
+                    Icon = new SymbolIcon { Symbol = SymbolRegular.DrawText24 },
+                    TargetPageType = typeof(Views.Pages.WriterPage),
+                },
             ];
 
             _isInitialized = true;
