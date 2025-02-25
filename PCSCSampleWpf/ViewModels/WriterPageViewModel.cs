@@ -1,7 +1,10 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
+using MinatoProject.PCSCSampleWpf.Common;
 using MinatoProject.PCSCSampleWpf.Services.Interfaces;
+using PCSC.Monitoring;
 
 namespace MinatoProject.PCSCSampleWpf.ViewModels
 {
@@ -18,16 +21,25 @@ namespace MinatoProject.PCSCSampleWpf.ViewModels
         private string pageTitle = "Reader";
 
         /// <summary>
-        /// デバイス一覧
-        /// </summary>
-        [ObservableProperty]
-        private List<string> readers = [];
-
-        /// <summary>
         /// 選択されたデバイス
         /// </summary>
         [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(UpdateBinaryCommand))]
         private string selectedReader = string.Empty;
+
+        /// <summary>
+        /// 現在のカードステータス
+        /// </summary>
+        [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(UpdateBinaryCommand))]
+        private CardStatusEventArgs currentCardStatus = new();
+
+        /// <summary>
+        /// 現在のデバイスステータス
+        /// </summary>
+        [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(UpdateBinaryCommand))]
+        private StatusChangeEventArgs currentDeviceStatus = new();
 
         /// <summary>
         /// MSB
@@ -45,6 +57,7 @@ namespace MinatoProject.PCSCSampleWpf.ViewModels
         /// 書き込む対象のバイナリデータ（文字列）
         /// </summary>
         [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(UpdateBinaryCommand))]
         private string inputData = string.Empty;
 
         /// <summary>
@@ -76,11 +89,34 @@ namespace MinatoProject.PCSCSampleWpf.ViewModels
             _logger = logger;
             _deviceService = deviceService;
 
-            Readers = _deviceService.Readers;
-            if (Readers.Count > 0)
+            // 現在選択されているデバイスをMainWindowViewModelに要求
+            SelectedReader = WeakReferenceMessenger.Default.Send<SelectedReaderRequestMessage>();
+
+            // メッセンジャーの登録
+            WeakReferenceMessenger.Default.Register<StatusChangeEventMessage>(this, (r, m) =>
             {
-                SelectedReader = Readers.First();
-            }
+                CurrentDeviceStatus = m.Value;
+            });
+
+            WeakReferenceMessenger.Default.Register<CardStatusEventMessage>(this, (r, m) =>
+            {
+                CurrentCardStatus = m.Value;
+            });
+
+            WeakReferenceMessenger.Default.Register<SelectedReaderChangedMessage>(this, (r, m) =>
+            {
+                SelectedReader = m.Value;
+            });
+        }
+        #endregion
+
+        #region ファイナライザ
+        /// <summary>
+        /// ファイナライザ
+        /// </summary>
+        ~WriterPageViewModel()
+        {
+            WeakReferenceMessenger.Default.UnregisterAll(this);
         }
         #endregion
 
@@ -88,7 +124,7 @@ namespace MinatoProject.PCSCSampleWpf.ViewModels
         /// <summary>
         /// バイナリデータを書き込む
         /// </summary>
-        [RelayCommand]
+        [RelayCommand(CanExecute = nameof(CanUpdateBinary))]
         private void UpdateBinary()
         {
             _logger.LogInformation("start");
@@ -109,6 +145,18 @@ namespace MinatoProject.PCSCSampleWpf.ViewModels
             }
 
             _logger.LogInformation("end");
+        }
+
+        /// <summary>
+        /// UpdateBinaryの実行可否判定
+        /// </summary>
+        /// <returns>実行可否</returns>
+        private bool CanUpdateBinary()
+        {
+            return CurrentDeviceStatus.NewState.HasFlag(PCSC.SCRState.Present) &&
+                !string.IsNullOrEmpty(SelectedReader) &&
+                !string.IsNullOrEmpty(InputData);
+                
         }
         #endregion
 

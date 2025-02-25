@@ -61,6 +61,7 @@ public partial class App : Application
 
             // Services
             _ = services.AddSingleton<IPCSCDeviceService, PCSCDeviceService>();
+            _ = services.AddSingleton<ISnackbarService, SnackbarService>();
 
         })
         .ConfigureLogging(logBuilder =>

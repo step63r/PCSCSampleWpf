@@ -37,6 +37,15 @@ namespace MinatoProject.PCSCSampleWpf.Services
                 }
             }
         }
+
+        /// <inheritdoc />
+        public bool Monitoring
+        {
+            get
+            {
+                return _monitor.Monitoring;
+            }
+        }
         #endregion
 
         #region メンバ変数

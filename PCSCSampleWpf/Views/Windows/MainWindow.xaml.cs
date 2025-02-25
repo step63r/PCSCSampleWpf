@@ -21,7 +21,8 @@ public partial class MainWindow : INavigationWindow
     /// </summary>
     /// <param name="viewModel">ViewModelのインスタンス</param>
     /// <param name="navigationService">INavigationService</param>
-    public MainWindow(MainWindowViewModel viewModel, INavigationService navigationService)
+    /// <param name="snackbarService">ISnackbarService</param>
+    public MainWindow(MainWindowViewModel viewModel, INavigationService navigationService, ISnackbarService snackbarService)
     {
         ViewModel = viewModel;
         DataContext = this;
@@ -31,6 +32,7 @@ public partial class MainWindow : INavigationWindow
         InitializeComponent();
 
         navigationService.SetNavigationControl(RootNavigation);
+        snackbarService.SetSnackbarPresenter(SnackbarPresenter);
     }
 
     #region INavigationWindow

@@ -38,6 +38,10 @@ namespace MinatoProject.PCSCSampleWpf.Services.Interfaces
         /// デバイス一覧
         /// </summary>
         List<string> Readers { get; }
+        /// <summary>
+        /// モニター中かどうか
+        /// </summary>
+        bool Monitoring { get; }
         #endregion
 
         #region メソッド

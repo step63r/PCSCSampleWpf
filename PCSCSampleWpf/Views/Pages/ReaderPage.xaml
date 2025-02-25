@@ -17,68 +17,32 @@
     <Grid Margin="4">
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
-            <RowDefinition Height="auto" />
-            <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!--デバイス選択領域-->
+        <!--設定入力領域-->
         <Grid Grid.Row="0" Margin="4">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Grid Grid.Column="0" Margin="0 0 4 0" VerticalAlignment="Center">
-                    <ui:TextBlock>Device:</ui:TextBlock>
-                </Grid>
-                <Grid Grid.Column="1" Margin="4 0 0 0" VerticalAlignment="Center">
-                    <ComboBox ItemsSource="{Binding Readers, Mode=OneWay}" SelectedItem="{Binding SelectedReader}" />
-                </Grid>
-            </Grid>
-        </Grid>
-
-        <!--デバイス・カード情報領域-->
-        <Grid Grid.Row="1" Margin="4">
-            <Grid Margin="8 0 0 0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="auto" />
-                    <RowDefinition Height="auto" />
-                    <RowDefinition Height="auto" />
-                    <RowDefinition Height="auto" />
-                    <RowDefinition Height="auto" />
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <ui:TextBlock Grid.Row="0" Grid.Column="0" Padding="2">Status:</ui:TextBlock>
-                <ui:TextBlock Grid.Row="1" Grid.Column="0" Padding="2">ATR:</ui:TextBlock>
-                <ui:TextBlock Grid.Row="2" Grid.Column="0" Padding="2">UID:</ui:TextBlock>
-                <ui:TextBlock Grid.Row="3" Grid.Column="0" Padding="2">Card Name:</ui:TextBlock>
-                <ui:TextBlock Grid.Row="4" Grid.Column="0" Padding="2">Card Type:</ui:TextBlock>
-
-                <ui:TextBlock Grid.Row="0" Grid.Column="1" Padding="2" Text="{Binding DeviceStatus}" />
-                <ui:TextBlock Grid.Row="1" Grid.Column="1" Padding="2" Text="{Binding DeviceATR}" />
-                <ui:TextBlock Grid.Row="2" Grid.Column="1" Padding="2" Text="{Binding CardUid}" />
-                <ui:TextBlock Grid.Row="3" Grid.Column="1" Padding="2" Text="{Binding CardName}" />
-                <ui:TextBlock Grid.Row="4" Grid.Column="1" Padding="2" Text="{Binding CardType}" />
-            </Grid>
-        </Grid>
-
-        <!--読り取りボタン領域-->
-        <Grid Grid.Row="2" Margin="4">
-            <ui:Button Command="{Binding ReadAllBinariesCommand}" Content="Read Binary" Padding="24,12" />
+            <StackPanel Orientation="Horizontal">
+                <ui:TextBlock VerticalAlignment="Center" Margin="0 0 4 0">Offset:</ui:TextBlock>
+                <ui:NumberBox ClearButtonEnabled="False" SpinButtonPlacementMode="Hidden" MinWidth="80" Minimum="0" Value="0" Text="{Binding Offset, UpdateSourceTrigger=PropertyChanged}" Margin="0 0 8 0" />
+                <ui:TextBlock VerticalAlignment="Center" Margin="0 0 4 0">Size:</ui:TextBlock>
+                <ui:NumberBox ClearButtonEnabled="False" SpinButtonPlacementMode="Hidden" MinWidth="80" Minimum="0" Value="0" Text="{Binding Size, UpdateSourceTrigger=PropertyChanged}" Margin="0 0 8 0" />
+                <ui:TextBlock VerticalAlignment="Center" Margin="0 0 4 0">All bytes:</ui:TextBlock>
+                <ui:NumberBox ClearButtonEnabled="False" SpinButtonPlacementMode="Hidden" MinWidth="80" Minimum="0" Value="0" Text="{Binding AllBytes, UpdateSourceTrigger=PropertyChanged}" Margin="0 0 8 0" />
+                <ui:Button Command="{Binding ReadAllBinariesCommand}" Content="Read Binary" Padding="24,12" />
+            </StackPanel>
         </Grid>
 
         <!--表示領域-->
-        <Grid Grid.Row="3" Margin="4">
+        <Grid Grid.Row="1" Margin="4">
             <ui:TextBox Text="{Binding ResultText}"
                         VerticalScrollBarVisibility="Visible"
                         HorizontalScrollBarVisibility="Auto"
                         TextWrapping="Wrap"
                         AcceptsReturn="True"
-                        ClearButtonEnabled="False" />
+                        ClearButtonEnabled="False"
+                        FontFamily="Consolas"
+                        IsReadOnly="True" />
         </Grid>
     </Grid>
 </Page>
